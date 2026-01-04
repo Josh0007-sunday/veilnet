@@ -2,6 +2,15 @@
   command = "pip install -r requirements.txt"
   functions = "netlify/functions"
 
+# This section ensures that your function can access other parts of your codebase.
+[functions]
+  included_files = [
+    "core/**",
+    "node/**",
+    "storage/**",
+    "storage/schema.sql"
+  ]
+
 [[redirects]]
   from = "/*"
   to = "/.netlify/functions/api/:splat"
