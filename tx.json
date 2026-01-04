@@ -1,0 +1,16 @@
+{
+  "public_key": "veilpk:21c991fcecca4652",
+  "seal_fingerprint": "veilseal:e3c4231df20fbcaa",
+  "payload": {
+    "type": "data",
+    "data": {
+      "message": "hello veilnet"
+    },
+    "metadata": {},
+    "timestamp": 1767554954
+  },
+  "signature": "sqLuEO6M0EP1qlIMLDNfSlViBjXWB7ouG7uCN973oTXWTKypqt2rQmad55396Wm5UB8KO5RC+oF5sv9O465SBQ==",
+  "nonce": 0,
+  "version": "1.0",
+  "transaction_id": "veiltx:5697d77e3fa3068732f5371b89af7ffa7126e46860f22b6dc9ca25b9e7a49ee4"
+}

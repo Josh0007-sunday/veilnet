@@ -1,0 +1,127 @@
+# VeilNet DevNet Workflow Guide
+
+This guide outlines the steps to generate identities, register them with the node, create transactions, and submit them to your local VeilNet DevNet.
+
+**Prerequisites:**
+1.  Your VeilNet node must be running in a separate terminal.
+    ```bash
+    venv/bin/python3 devnet/bootstrap.py
+    ```
+    (Keep this terminal open and running in the background.)
+2.  All commands below are to be executed from your project root directory (`~/Desktop/veilNet`).
+3.  **If you are starting fresh or encounter schema errors (like "no such column"):**
+    *   Stop the running VeilNet server (`Ctrl+C` in its terminal).
+    *   Delete the database file: `rm veilnet.db`
+    *   Restart the server: `venv/bin/python3 devnet/bootstrap.py`
+
+---
+
+## Step 1: Generate a New Identity (PublicKey and Seal)
+
+This command creates a new `PublicKey` and an associated `Seal` locally. It prints all the necessary details you'll need for subsequent steps.
+
+```bash
+venv/bin/python3 devnet/cli.py generate
+```
+
+**Example Output (Copy these values!):**
+
+```
+--- New Identity and Seal Generated ---
+Public Key Fingerprint: veilpk:YOUR_PUBLIC_KEY_FINGERPRINT_HERE
+Public Key (PEM):
+-----BEGIN PUBLIC KEY-----
+YOUR_PUBLIC_KEY_PEM_STRING_HERE
+-----END PUBLIC KEY-----
+Seal Fingerprint: veilseal:YOUR_SEAL_FINGERPRINT_HERE
+Seal Public Key (PEM):
+-----BEGIN PUBLIC KEY-----
+YOUR_SEAL_PUBLIC_KEY_PEM_STRING_HERE
+-----END PUBLIC KEY-----
+
+IMPORTANT: Store the private key for this Seal securely if you wish to reuse it:
+Seal Private Key (Base64): YOUR_SEAL_PRIVATE_KEY_B64_STRING_HERE
+```
+*   **ACTION:** Copy `YOUR_PUBLIC_KEY_FINGERPRINT_HERE`, `YOUR_SEAL_FINGERPRINT_HERE`, and `YOUR_SEAL_PRIVATE_KEY_B64_STRING_HERE`.
+*   **ACTION:** Save the `Public Key (PEM)` content (including `-----BEGIN...` and `-----END...` lines) exactly as shown into a file named `pk.pem` in your project root.
+*   **ACTION:** Save the `Seal Public Key (PEM)` content exactly as shown into a file named `seal_pk.pem` in your project root.
+
+---
+
+## Step 2: Register the Identity and Initial Seal with the Node
+
+This command sends an API request to your running VeilNet node to register the `PublicKey` and authorize the `Seal` you just generated. This makes your identity and seal known to the network.
+
+```bash
+venv/bin/python3 devnet/cli.py register-identity \
+    --public-key-fingerprint "YOUR_PUBLIC_KEY_FINGERPRINT_HERE" \
+    --public-key-pem-file pk.pem \
+    --seal-fingerprint "YOUR_SEAL_FINGERPRINT_HERE" \
+    --seal-public-key-pem-file seal_pk.pem
+```
+*   **ACTION:** Replace `YOUR_PUBLIC_KEY_FINGERPRINT_HERE` and `YOUR_SEAL_FINGERPRINT_HERE` with the exact values you copied from Step 1.
+*   **Expected Output:** You should see `--- Registration Successful ---` and a JSON response.
+
+---
+
+## Step 3: Create a Signed Data Transaction
+
+Now that your identity and initial seal are registered, you can create and sign a transaction. The initial `nonce` for a newly registered identity is `0`.
+
+```bash
+venv/bin/python3 devnet/cli.py create-tx \
+    --public-key-fingerprint "YOUR_PUBLIC_KEY_FINGERPRINT_HERE" \
+    --seal-private-key-b64 "YOUR_SEAL_PRIVATE_KEY_B64_STRING_HERE" \
+    --payload-type "data" \
+    --payload-data '{"message": "Hello VeilNet, this is my first transaction!"}' \
+    --nonce 0
+```
+*   **ACTION:** Replace `YOUR_PUBLIC_KEY_FINGERPRINT_HERE` and `YOUR_SEAL_PRIVATE_KEY_B64_STRING_HERE` with your copied values. Set `nonce` to `0` for the first transaction.
+*   **Expected Output:** The full JSON of the signed transaction and a `curl` command to submit it.
+*   **ACTION:** Copy the entire JSON output to a file named `tx.json` in your project root.
+
+---
+
+## Step 4: Submit the Transaction to the Node
+
+Submit the `tx.json` file containing your signed transaction to the node using `curl`.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/submit -H 'Content-Type: application/json' -d @tx.json
+```
+*   **Expected Output:** A JSON response like `{"message": "Transaction accepted", "transaction_id": "..."}`.
+*   **NOTE:** After a successful submission, the `nonce` for your identity on the node will be incremented (`0` -> `1`).
+
+---
+
+## Step 5: (Optional) Create a Seal Rotation Transaction
+
+To rotate your seal, you'll need the `public-key-fingerprint` and the `private key (Base64)` of your *current (old)* active seal. Use the *next expected nonce* (which will be `1` after your first successful transaction).
+
+This command generates a *new* seal locally and crafts a transaction to register this new seal and deactivate the old one.
+
+```bash
+venv/bin/python3 devnet/cli.py rotate-seal \
+    --public-key-fingerprint "YOUR_PUBLIC_KEY_FINGERPRINT_HERE" \
+    --old-seal-private-key-b64 "YOUR_CURRENT_ACTIVE_SEAL_PRIVATE_KEY_B64_HERE" \
+    --nonce 1
+```
+*   **ACTION:** Replace `YOUR_PUBLIC_KEY_FINGERPRINT_HERE` and `YOUR_CURRENT_ACTIVE_SEAL_PRIVATE_KEY_B64_HERE` with your values. Remember to update the `nonce`.
+*   **Expected Output:** JSON of the rotation transaction, and details for the `New Seal` (fingerprint, PEM, private key).
+*   **ACTION:** Copy the entire JSON output to a file (e.g., `rotation_tx.json`).
+
+---
+
+## Step 6: (Optional) Submit the Seal Rotation Transaction
+
+Submit the `rotation_tx.json` file to the node.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/submit -H 'Content-Type: application/json' -d @rotation_tx.json
+```
+*   **Expected Output:** A JSON response indicating acceptance.
+*   **NOTE:** After this, your *new* seal will be active, and your *old* seal will be deactivated for new transactions. The nonce will also increment again (`1` -> `2`).
+*   **ACTION:** Store the `New Seal Private Key (Base64)` if you plan to use this new seal for future transactions.
+
+---
+End of Guide

@@ -1,0 +1,15 @@
+{
+  "public_key": "veilpk:96e28ec11f6df0fa",
+  "seal_fingerprint": "veilseal:a0de583505b128d2",
+  "payload": {
+    "type": "data",
+    "data": null,
+    "encrypted_data": "FJiBdXE6vPWuJpQCOqBbuKnOIzFJTsb7dHqjZS767zzBh2giMPuPWdnj2rRLfcH98zkBDIYrtbJZiDVm/sRWvA==",
+    "metadata": {},
+    "timestamp": 1767555849
+  },
+  "signature": "lHb3Lp1vDhQ0sZ7Wqqe/p7SBPddNfwpNkoCOKeCMFFa7JMKKnKkDtdsrqcb2bgCcpkyXh/GJiNJfwASgFy6NBw==",
+  "nonce": 0,
+  "version": "1.0",
+  "transaction_id": "veiltx:5b616153259ac733770eb4a4553d7a3f4b5818360a6a5ba0388e594a3d41abc7"
+}
